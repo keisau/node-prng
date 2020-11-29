@@ -2,8 +2,6 @@
 // https://en.wikipedia.org/wiki/Xorshift
 // require NodeJS 12.11.0 or up for NAPI_VERSION 5
 
-#define NAPI_VERSION 5
-
 #include <node_api.h>
 #include <common.h>
 

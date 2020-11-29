@@ -2,8 +2,6 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#define NAPI_VERSION 5
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
