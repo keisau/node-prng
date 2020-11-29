@@ -1,8 +1,9 @@
 *
 
 # whitelist
-!lib/**/*
 !package.json
 !yarn.lock
+!includes/**/*
+!lib/**/*
 !src/**/*
 !binding.gyp

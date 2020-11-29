@@ -5,48 +5,25 @@
 #define NAPI_VERSION 5
 
 #include <node_api.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <time.h>
+#include <common.h>
 
-static inline uint64_t rotl(const uint64_t x, int k) {
-  return (x << k) | (x >> (64 - k));
-}
+uint64_t x; /* The state can be seeded with any value. */
 
-static uint64_t x; /* The state can be seeded with any value. */
+uint32_t _seed32;
+uint64_t _seed64;
 
-static inline uint64_t splitmix64() {
-	uint64_t z = (x += 0x9e3779b97f4a7c15);
-	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
-	z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
-	return z ^ (z >> 31);
-}
-
-#define napi_fn(x) napi_value x(napi_env env, napi_callback_info info)
-
-napi_fn(xorshift32);
-napi_fn(xorshift64);
-napi_fn(xoroshiro128_p);
-napi_fn(xoroshiro128_pp);
-napi_fn(xoroshiro128_ss);
-napi_fn(xoshiro256_p);
-
-static uint32_t _seed32;
-static uint64_t _seed64;
-
-static uint64_t ss[2];
-static uint64_t pp[2];
-static uint64_t p[2];
-static uint64_t xp[4];
-static uint64_t xpp[4];
-static uint64_t xss[4];
+uint64_t ss[2];
+uint64_t pp[2];
+uint64_t p[2];
+uint64_t xp[4];
+uint64_t xpp[4];
+uint64_t xss[4];
 
 napi_value xorshift32(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   // xorshift32 algorithm
   uint32_t n = _seed32;
@@ -57,7 +34,7 @@ napi_value xorshift32(napi_env env, napi_callback_info info) {
 
   _seed32 = n;
 
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 4, buf, &out, &retval);
   if (status != napi_ok) {
@@ -71,8 +48,8 @@ napi_value xorshift32(napi_env env, napi_callback_info info) {
 napi_value xorshift64(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   // xorshift64 algorithm
   uint64_t n = _seed64;
@@ -83,7 +60,7 @@ napi_value xorshift64(napi_env env, napi_callback_info info) {
 
   _seed64 = n;
 
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 8, buf, &out, &retval);
   if (status != napi_ok) {
@@ -91,28 +68,16 @@ napi_value xorshift64(napi_env env, napi_callback_info info) {
   }
 
   return retval;
-}
-
-static inline uint64_t xoroshiro128_ss_next(void) {
-  const uint64_t s0 = ss[0];
-  uint64_t s1 = ss[1];
-  const uint64_t result = rotl(s0 * 5, 7) * 9;
-
-  s1 ^= s0;
-  ss[0] = rotl(s0, 24) ^ s1 ^ (s1 << 16); // a, b
-  ss[1] = rotl(s1, 37); // c
-
-  return result;
 }
 
 napi_value xoroshiro128_ss(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   uint64_t n = xoroshiro128_ss_next();
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 8, buf, &out, &retval);
   if (status != napi_ok) {
@@ -120,28 +85,16 @@ napi_value xoroshiro128_ss(napi_env env, napi_callback_info info) {
   }
 
   return retval;
-}
-
-static inline uint64_t xoroshiro128_p_next(void) {
-  const uint64_t s0 = p[0];
-  uint64_t s1 = p[1];
-  const uint64_t result = s0 + s1;
-
-  s1 ^= s0;
-  p[0] = rotl(s0, 24) ^ s1 ^ (s1 << 16); // a, b
-  p[1] = rotl(s1, 37); // c
-
-  return result;
 }
 
 napi_value xoroshiro128_p(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   uint64_t n = xoroshiro128_p_next();
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 8, buf, &out, &retval);
   if (status != napi_ok) {
@@ -149,28 +102,16 @@ napi_value xoroshiro128_p(napi_env env, napi_callback_info info) {
   }
 
   return retval;
-}
-
-static inline uint64_t xoroshiro128_pp_next(void) {
-  const uint64_t s0 = pp[0];
-  uint64_t s1 = pp[1];
-  const uint64_t result = rotl(s0 + s1, 17) + s0;
-
-  s1 ^= s0;
-  pp[0] = rotl(s0, 49) ^ s1 ^ (s1 << 21); // a, b
-  pp[1] = rotl(s1, 28); // c
-
-  return result;
 }
 
 napi_value xoroshiro128_pp(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   uint64_t n = xoroshiro128_pp_next();
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 8, buf, &out, &retval);
   if (status != napi_ok) {
@@ -178,33 +119,16 @@ napi_value xoroshiro128_pp(napi_env env, napi_callback_info info) {
   }
 
   return retval;
-}
-
-static inline uint64_t xoshiro256_p_next(void) {
-  const uint64_t result = xp[0] + xp[3];
-
-  const uint64_t t = xp[1] << 17;
-
-  xp[2] ^= xp[0];
-  xp[3] ^= xp[1];
-  xp[1] ^= xp[2];
-  xp[0] ^= xp[3];
-
-  xp[2] ^= t;
-
-  xp[3] = rotl(xp[3], 45);
-
-  return result;
 }
 
 napi_value xoshiro256_p(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   uint64_t n = xoshiro256_p_next();
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 8, buf, &out, &retval);
   if (status != napi_ok) {
@@ -212,33 +136,16 @@ napi_value xoshiro256_p(napi_env env, napi_callback_info info) {
   }
 
   return retval;
-}
-
-static inline uint64_t xoshiro256_pp_next(void) {
-  const uint64_t result = rotl(xpp[0] + xpp[3], 23) + xpp[0];
-
-  const uint64_t t = xpp[1] << 17;
-
-  xpp[2] ^= xpp[0];
-  xpp[3] ^= xpp[1];
-  xpp[1] ^= xpp[2];
-  xpp[0] ^= xpp[3];
-
-  xpp[2] ^= t;
-
-  xpp[3] = rotl(xpp[3], 45);
-
-  return result;
 }
 
 napi_value xoshiro256_pp(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   uint64_t n = xoshiro256_pp_next();
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 8, buf, &out, &retval);
   if (status != napi_ok) {
@@ -248,31 +155,14 @@ napi_value xoshiro256_pp(napi_env env, napi_callback_info info) {
   return retval;
 }
 
-static inline uint64_t xoshiro256_ss_next(void) {
-  const uint64_t result = rotl(xss[1] * 5, 7) * 9;
-
-  const uint64_t t = xss[1] << 17;
-
-  xss[2] ^= xss[0];
-  xss[3] ^= xss[1];
-  xss[1] ^= xss[2];
-  xss[0] ^= xss[3];
-
-  xss[2] ^= t;
-
-  xss[3] = rotl(xss[3], 45);
-
-  return result;
-}
-
 napi_value xoshiro256_ss(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value retval;
-  unsigned char *buf;
-  unsigned char *out;
+  void *buf;
+  void *out;
 
   uint64_t n = xoshiro256_ss_next();
-  buf = (unsigned char*) &n;
+  buf = (void*) &n;
 
   status = napi_create_buffer_copy(env, 8, buf, &out, &retval);
   if (status != napi_ok) {
